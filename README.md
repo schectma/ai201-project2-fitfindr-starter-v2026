@@ -40,8 +40,7 @@
 ## What This Does
 
 <!-- Three or four sentences: what a user asks for, and what they get back. -->
-
-
+Program assembles and presents combinations of clothing articles. User requests an article of clothing with descriptors (e.g. price) and gets back a set of multiple pieces that matches along those descriptors. Original request is used to search extant data, whatever it returns is fed into a model that "intelligently" combines them, then a plain old function makes the actual "card" for presentation to the user.
 
 ---
 
@@ -59,24 +58,24 @@
 
 ### `search_listings`
 
-- **What it does:**
-- **Inputs:** <!-- name and type each: `max_price` (float), not "a price" -->
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Search the listings data for items matching a description, and optionally a size and a price ceiling.
+- **Inputs:** <!-- name and type each: `max_price` (float), not "a price" --> `description` (str), `size` (str), `max_price` (float)
+- **Returns:** A list of matching listing dicts, best match first.
+- **When it has nothing:** Returns an empty list.
 
 ### `suggest_outfit`
 
-- **What it does:**
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Given a thrifted item and the user's wardrobe, suggest one or two outfits.
+- **Inputs:** `new_item` (dict), `wardrobe` (dict)
+- **Returns:** A non-empty string with outfit suggestions.
+- **When it has nothing:** Return general styling advice rather than raising or returning "".
 
 ### `create_fit_card`
 
-- **What it does:**
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Write a short caption someone would actually post about the find.
+- **Inputs:** `outfit` (str), `new_item` (dict)
+- **Returns:** A two-to-four sentence caption.
+- **When it has nothing:** Return a descriptive message rather than raising or returning "".
 
 ---
 
@@ -93,13 +92,13 @@
      The grader checks your code against what you claim here, so the file and
      function have to be real. -->
 
-**Branch rule:**
+**Branch rule:** If search_listings returns an empty list, put a message in the session and stop. Otherwise, take the first result and go to suggest_outfit.
 
 **Where it lives:** `agent.py::run_agent`
 
-**How the query is parsed:** <!-- regex, string splitting, or asking the model — say which -->
+**How the query is parsed:** <!-- regex, string splitting, or asking the model — say which --> Regex.
 
-**What moves through the session:** <!-- which fields, in what order -->
+**What moves through the session:** <!-- which fields, in what order --> User's request followed by relevant results from the data.
 
 ---
 
