@@ -53,12 +53,10 @@ Given a query that matches no listings, the agent stops before calling
      look like state failure — it looks like a tool problem. Something that
      compares session["selected_item"] against what actually reached
      suggest_outfit is the shape you're after. -->
+`session["selected_item"]["id"]` == `session["search_results"][0]["id"]` 5 out of 5 times.
 
 
-
-**Why this target:**
-
-
+**Why this target:** Item should match on "id" from search dict to selector. Indicates the exact correct string transmitted. Something is critically wrong if this doesn't work 100% of the time.
 
 ---
 
@@ -74,10 +72,10 @@ Given a query that matches no listings, the agent stops before calling
      mentions the price? Two different items producing the same opening
      sentence? A card longer than a caption anyone would post? Any of those can
      be turned into a number. -->
+Suggestion string is 2-4 sentences 4 out of 5 times.
 
 
-
-**Why this target:**
+**Why this target:** Sentence (count per stock docstring specs) is typical of a card-sized blurb. 80% hit rate will indicate the model is at least trying.
 
 
 
@@ -91,10 +89,10 @@ Given a query that matches no listings, the agent stops before calling
      wardrobe path, what happens when the model can't be reached, whether the
      search respects a price ceiling — anything, as long as it names a number
      or an observable outcome. -->
+Price of returned item(s) is less than or equal to the price specified in the query. 5 out of 5 times.
 
 
-
-**Why this target:**
+**Why this target:** 5/5 because this is deterministic (just a filter). Program should not fail this ever.
 
 
 
