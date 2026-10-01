@@ -112,25 +112,59 @@ Program assembles and presents combinations of clothing articles. User requests 
 **One full query**
 
 ```
-$ python app.py ask '...'
+$ python app.py ask 'Slim fit jeans for under $200'
 
+```
+```
+[1] parse_query
+      in:  Slim fit jeans for under $200
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 10 items: Straight Leg Black Jeans — Faded, Vintage Levi's 501 Jeans — Medium Wash, Baggy Carpenter Jeans — Dark Wash … +7 more
+      →    10 match(es)
+[3] select_item
+      out: Straight Leg Black Jeans — Faded ($30.0, thredUp)
+[4] suggest_outfit
+      in:  Straight Leg Black Jeans — Faded ($30.0, thredUp)
+      out: * Pair the faded black jeans with the white ribbed tank top, black combat boots, and the vintage black denim j…
+      →    10 wardrobe item(s)
+[5] create_fit_card
+      in:  Straight Leg Black Jeans — Faded ($30.0, thredUp)
+      out: Scored these perfectly faded black straight-leg jeans on thredUp for just $30, and they are the ultimate grung…
+
+  Found:    Straight Leg Black Jeans — Faded — $30.0 on thredUp
+
+  Outfit:   * Pair the faded black jeans with the white ribbed tank top, black combat boots, and the vintage black denim jacket for an effortless double-denim grunge look.
+* Style the jeans with the oversized grey crewneck sweatshirt and chunky white sneakers for a relaxed, vintage off-duty outfit.
+
+  Fit card: Scored these perfectly faded black straight-leg jeans on thredUp for just $30, and they are the ultimate grunge staple. I've been living in them with a white tank and combat boots for that effortless double-denim look. Such a good vintage find! 🖤✨ #ThriftFinds #GrungeStyle
+
+2 model calls this session, 510 prompt + 127 output tokens
 ```
 
 **The three tools, tested one at a time**
 
 ```
-$ python -c "from tools import search_listings; print(search_listings('graphic tee', max_price=30))"
-
+$ python -c "from tools import search_listings; print(search_listings('Slim fit jeans', max_price=200))"
+```
+```
+[{'id': 'lst_037', 'title': 'Straight Leg Black Jeans — Faded', 'description': 'Faded black straight-leg jeans. Sits at the hips, classic fit. Slightly cropped length. No rips, just natural fading.', 'category': 'bottoms', 'style_tags': ['vintage', 'classic', 'grunge', 'denim'], 'size': 'W28', 'condition': 'good', 'price': 30.0, 'colors': ['black', 'faded black'], 'brand': "Levi's", 'platform': 'thredUp'}, {'id': 'lst_001', 'title': "Vintage Levi's 501 Jeans — Medium Wash", 'description': 'Classic 501s in a perfect medium wash. Some light fading at the knees which adds to the vintage look. No rips or stains.', 'category': 'bottoms', 'style_tags': ['vintage', 'classic', 'denim', 'streetwear'], 'size': 'W30 L30', 'condition': 'good', 'price': 38.0, 'colors': ['blue', 'indigo'], 'brand': "Levi's", 'platform': 'depop'}, {'id': 'lst_031', 'title': 'Baggy Carpenter Jeans — Dark Wash', 'description': 'Baggy carpenter jeans with hammer loop on the side. Dark wash. Sits at the waist. Major 90s workwear vibes.', 'category': 'bottoms', 'style_tags': ['90s', 'vintage', 'streetwear', 'baggy', 'workwear'], 'size': 'W32', 'condition': 'good', 'price': 36.0, 'colors': ['dark blue', 'indigo'], 'brand': None, 'platform': 'depop'}, {'id': 'lst_002', 'title': 'Y2K Baby Tee — Butterfly Print', 'description': 'Super cute early 2000s baby tee with butterfly graphic. Fitted crop length. Tag says medium but fits like a small.', 'category': 'tops', 'style_tags': ['y2k', 'vintage', 'graphic tee', 'cottagecore'], 'size': 'S/M', 'condition': 'excellent', 'price': 18.0, 'colors': ['white', 'pink', 'purple'], 'brand': None, 'platform': 'depop'}, {'id': 'lst_006', 'title': 'Graphic Tee — 2003 Tour Bootleg Style', 'description': 'Vintage-style bootleg tee with faded graphic. Slightly boxy fit. 100% cotton, soft and worn-in.', 'category': 'tops', 'style_tags': ['graphic tee', 'vintage', 'grunge', 'streetwear', 'band tee'], 'size': 'L', 'condition': 'good', 'price': 24.0, 'colors': ['black'], 'brand': None, 'platform': 'depop'}, {'id': 'lst_017', 'title': 'Mesh Long-Sleeve Top — Black', 'description': 'Sheer black mesh long-sleeve. Great for layering under a graphic tee or over a bralette. Stretchy material, fits true to size.', 'category': 'tops', 'style_tags': ['y2k', 'grunge', 'goth', 'layering'], 'size': 'S/M', 'condition': 'excellent', 'price': 15.0, 'colors': ['black'], 'brand': None, 'platform': 'depop'}, {'id': 'lst_018', 'title': 'Vintage Linen Blazer — Cream', 'description': 'Lightweight linen blazer in cream. Relaxed fit, unstructured shoulders. Two front pockets. Could be dressed up or styled casually.', 'category': 'outerwear', 'style_tags': ['vintage', 'classic', 'linen', 'cottagecore', 'minimal'], 'size': 'M/L', 'condition': 'excellent', 'price': 38.0, 'colors': ['cream', 'off-white'], 'brand': None, 'platform': 'thredUp'}, {'id': 'lst_020', 'title': 'Henley Long Sleeve — Washed Burgundy', 'description': 'Soft washed henley in a rich burgundy. Three-button placket. Slightly shrunken/cropped fit. 100% cotton.', 'category': 'tops', 'style_tags': ['vintage', 'basics', 'earth tones', 'classic'], 'size': 'M', 'condition': 'excellent', 'price': 16.0, 'colors': ['burgundy', 'wine'], 'brand': None, 'platform': 'thredUp'}, {'id': 'lst_027', 'title': 'Oversized College Crewneck — Faded Red', 'description': 'Classic college-style crewneck in a beautifully faded red. No school name — just a plain athletic crewneck. Roomy fit.', 'category': 'tops', 'style_tags': ['vintage', 'athletic', 'oversized', 'classic'], 'size': 'XL', 'condition': 'good', 'price': 21.0, 'colors': ['red', 'faded red'], 'brand': None, 'platform': 'thredUp'}, {'id': 'lst_030', 'title': 'Vintage Knit Vest — Argyle Brown/Cream', 'description': 'Classic argyle knit vest in brown and cream. Fits medium. V-neck. Ideal for the dark academia or preppy vintage aesthetic.', 'category': 'tops', 'style_tags': ['vintage', 'preppy', 'knitwear', 'dark academia', 'earth tones'], 'size': 'M', 'condition': 'good', 'price': 25.0, 'colors': ['brown', 'cream', 'tan'], 'brand': None, 'platform': 'thredUp'}]
 ```
 
 ```
-$ python -c "from tools import suggest_outfit; ..."
-
+$ python -c "from tools import suggest_outfit; from utils.data_loader import get_example_wardrobe, load_listings; item = next(l for l in load_listings() if l['id'] == 'lst_037'); print(suggest_outfit(item, get_example_wardrobe()))"
+```
+```
+* Pair the faded black jeans with the white ribbed tank top, black combat boots, and the vintage black denim jacket for an effortless double-denim grunge look.
+* Style the jeans with the oversized grey crewneck sweatshirt and chunky white sneakers for a relaxed, vintage off-duty outfit.
 ```
 
 ```
-$ python -c "from tools import create_fit_card; ..."
-
+$ python -c "from tools import create_fit_card; from utils.data_loader import load_listings; item = next(l for l in load_listings() if l['id'] == 'lst_037'); print(create_fit_card('Pair the faded black jeans with the white ribbed tank top and black combat boots.', item))"
+```
+```
+Scored these faded black straight-leg jeans on thredUp for just $30, and they have the absolute best grunge vibe. I threw them on with a simple ribbed white tank and chunky combat boots for the ultimate effortless look. Vintage denim just hits different sometimes. 🖤✨
 ```
 
 ---
@@ -146,15 +180,15 @@ $ python -c "from tools import create_fit_card; ..."
 
 **Moment 1**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- *What I asked for:* "Please implement all three tools in this file."
+- *What came back:* Full working implementations of all three tools in `tools.py`.
+- *What I changed:* Nothing.
 
 **Moment 2**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- *What I asked for:* "What exactly is expected on these lines?"
+- *What came back:* Explanation of placeholders for tool calls in this file in addition to suggestions.
+- *What I changed:* Added suggested tool calls.
 
 <!-- ═══════════════════════ UNIT 4 — THE TEST ═══════════════════════
 
