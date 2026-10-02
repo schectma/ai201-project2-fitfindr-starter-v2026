@@ -219,30 +219,34 @@ Scored these faded black straight-leg jeans on thredUp for just $30, and they ha
 **Real output from one try**, pasted as text, naming the file and function
 that produced it:
 
-```
-- Query: `vintage graphic tee under $30`
-- Wardrobe: example
+Produced by `run_eval.py::main` (results file `results/run_2026-10-02_1123_before.md`),
+running the loop in `agent.py::run_agent` with the tools in `tools.py`. Five tries
+per scenario, caching off, temperature 0.9.
 
-**Try 1**
+Criteria 3, 4 and 5 have no scenario of their own in this run. They were scored
+from the same five tries as criterion 1, so the output below is the evidence for
+all three.
+
+#### Criteria 1, 3, 4, 5 — `vintage graphic tee under $30`, example wardrobe, Try 1
 
 - stopped early: no
 - selected_item: Graphic Tee — 2003 Tour Bootleg Style ($24.0, depop)
 - search_results: 10
 
-Outfit suggestion:
+Outfit suggestion (`tools.py::suggest_outfit`):
 
 ```
 * Pair the graphic tee with your baggy dark-wash jeans, black combat boots, and the slightly cropped vintage black denim jacket for an effortless grunge look.
 * Tuck the tee into your wide-leg khaki trousers, add your brown leather belt and chunky white sneakers, and layer the black cropped zip hoodie on top for a streetwear vibe.
 ```
 
-Fit card:
+Fit card (`tools.py::create_fit_card`):
 
 ```
 Found this 2003 tour bootleg tee at the absolute best time. For just $24, it was an instant add to cart on depop. Total effortless grunge energy for today's fit. 🎸🖤 #depopfinds #grungestyle
 ```
 
-Trace:
+Trace (`trace.py`, called from `agent.py::run_agent`):
 
 ```
 [1] parse_query
@@ -262,6 +266,32 @@ Trace:
       in:  Graphic Tee — 2003 Tour Bootleg Style ($24.0, depop)
       out: Found this 2003 tour bootleg tee at the absolute best time. For just $24, it was an instant add to cart on dep…
 ```
+
+#### Criterion 2 — `designer ballgown size XXS under $5`, example wardrobe, Try 1
+
+- stopped early: yes
+- selected_item: (none)
+- search_results: 0
+
+Message in `session["error"]` (`agent.py::_nothing_found_message`):
+
+```
+Nothing in the listings matched description 'designer ballgown', size XXS, under $5.
+Things to change: try broader words. E.g. 'jacket' finds more than 'cropped corduroy jacket'; drop the size, or try a neighbouring one; raise the price ceiling above $5.
+```
+
+Trace:
+
+```
+[1] parse_query
+      in:  designer ballgown size XXS under $5
+      out: description='designer ballgown', size='XXS', max_price=5.0
+[2] search_listings (via MCP)
+      in:  description='designer ballgown', size='XXS', max_price=5.0
+      out: [] (empty)
+      →    0 match(es)
+[3] branch
+      →    search returned []: stopping before suggest_outfit
 ```
 
 ---
@@ -286,13 +316,29 @@ Trace:
 
 | # | Criterion | Target | Verdict | How I decided |
 |---|---|---|---|---|
-| 1 |  |  |  |  |
-| 2 |  |  |  |  |
-| 3 |  |  |  |  |
-| 4 |  |  |  |  |
-| 5 |  |  |  |  |
+| 1 | Matching query completes all three tools | 4 of 5 | MET (5/5) | All 5 tries reached `create_fit_card` and returned a non-empty fit card; none stopped early. |
+| 2 | Impossible query stops before `suggest_outfit` | 5 of 5 | MET (5/5) | All 5 traces end at `[3] branch` with no `suggest_outfit` step, and the message names the description, size and price to change. |
+| 3 | `selected_item` is `search_results[0]` | 5 of 5 | MET (5/5) | In every try the `select_item` step shows the first title in the `search_listings` result. Compared by title, not `id`. The run log doesn't print ids. |
+| 4 | Suggestion is 2–4 sentences | 4 of 5 | MET (5/5) | Counted sentences by hand. Outfit suggestions: 2, 3, 2, 2, 2. Fit cards: 3, 2, 2, 3, 3. Both are in range, so the verdict holds whichever output the criterion means. |
+| 5 | Returned price ≤ query ceiling | 5 of 5 | MET (5/5) | The selected item was $24 in every try, under the $30 ceiling. Only the selected item's price is visible in the log, not all 10 results. |
 
 **Diagnoses**
+
+No criterion was missed. No miss to diagnose. Targets were easy to hit though.
+
+- Criteria 3 and 5 are deterministic. One is `results[0]`, the other is a
+  price filter. They can only fail if the code is broken, so 5/5 shows the code
+  works, not how the agent behaves under variation.
+- Criterion 4 is loose and ambiguous. The `create_fit_card` prompt tells the
+  model "2 to 4 sentences", so the check mostly confirms the model followed an
+  instruction it was given. The criterion also says "suggestion string" while
+  sitting under the fit card heading, so it isn't clear which output it counts.
+  I'd fix this one. E.g. "the fit card mentions the price
+  and the platform exactly once each, in at least 4 of 5 tries", which the
+  prompt asks for but nothing checks.
+- Every criterion except 2 was measured on one query and one item. 5/5 on
+  `vintage graphic tee under $30` says nothing about other phrasings, sizes or
+  price ceilings. Criteria 3–5 need their own scenarios in `scenarios.py`.
 
 
 
