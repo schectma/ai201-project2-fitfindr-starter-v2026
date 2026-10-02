@@ -190,6 +190,34 @@ Scored these faded black straight-leg jeans on thredUp for just $30, and they ha
 - *What came back:* Explanation of placeholders for tool calls in this file in addition to suggestions.
 - *What I changed:* Added suggested tool calls.
 
+**Unit 4, Moment 1: the MCP evidence**
+
+- *What I asked for:* help answering "On the MCP move", and then where the
+  `[]` result it described came from.
+- *What came back:* a draft saying the impossible query returned `[]` over
+  MCP. When I asked where it saw `[]`, Claude said its comparison script had
+  only printed counts (`direct=0 mcp=0`) and that it had inferred `[]`. The
+  only place `[]` actually appeared was in a trace it ran, not in my terminal.
+- *What I changed:* I didn't use the claim until the output was in front of
+  me. The `[] (empty)` trace lines are now in the run logs, and the MCP note
+  only claims what those logs and the four-query comparison show.
+
+**Unit 4, Moment 2: tightening criterion 4**
+
+- *What I asked for:* to fix the one thing my diagnosis pointed at
+  (criterion 4 being loose and ambiguous), then run `run_eval.py` again.
+- *What came back:* Claude wrote the tightened criterion under the original
+  in `criteria.md`, and re-scored the before-run against it with a small
+  counting script. The result was 0/5, because every card had the platform in
+  a hashtag. It then changed one sentence of the `create_fit_card` prompt and
+  ran `python run_eval.py --label after`, which scored 5/5.
+- *What I changed:* I asked why the 4r before-row had been added and whether
+  it was needed. It was, because the improvement has no baseline without it. A
+  separate before/after mini-table that repeated the two full run logs was
+  cut. I also had the AI-written text cleaned up (em dashes, arrows and
+  stiff phrasing). The em dash inside the `create_fit_card` prompt stayed,
+  because the after-run measured that exact prompt.
+
 <!-- ═══════════════════════ UNIT 4 — THE TEST ═══════════════════════
 
      Don't fill these in during unit 3.
@@ -434,7 +462,23 @@ stops the run before `suggest_outfit`.
       →    search returned []: stopping before suggest_outfit
 ```
 
-**On the MCP move:** <!-- what changed in your code, and whether anything  behaved differently afterwards. If the rewire didn't work, say exactly where it broke — the error text and the last thing that worked. That earns the point in full. --> Nothing changed, beyond the MCP move. Nothing behaved differently afterwards or broke (everything behaved as expected).
+**On the MCP move:** <!-- what changed in your code, and whether anything  behaved differently afterwards. If the rewire didn't work, say exactly where it broke — the error text and the last thing that worked. That earns the point in full. -->
+
+- **What changed in my code.** `mcp_server.py` registers `search_listings` with
+  `@mcp.tool()`. It has the same typed inputs as the Tool Inventory
+  (`description: str`, `size: str | None`, `max_price: float | None`) and calls
+  the original `tools.search_listings`. `run_agent()` gets its results from
+  `agent.py::_search`, which calls `mcp_client.call_tool("search_listings", {...})`.
+  If MCP fails, it falls back to the direct call. I also changed the trace
+  label so it reports which path ran: `search_listings (via MCP)` or
+  `search_listings (direct, MCP failed: <error>)`. Before that change, the
+  fallback would have hidden a broken server behind the same label.
+- **Whether anything behaved differently.** No. I ran four queries both
+  directly and through `call_tool`: a price ceiling, a waist size (W30), a
+  letter size (S) and the impossible query. Every result list was identical,
+  same listings in the same order, and the impossible query returned `[]`
+  both ways. Every trace in the before and after runs shows
+  `search_listings (via MCP)`, so the fallback never ran.
 
 ---
 
@@ -523,6 +567,52 @@ items could still get a depop hashtag.
 <!-- For each criterion still missed: what you'd do, and why you stopped where
      you did. "I ran out of time" is fine if it's true. Pretending nothing is
      left is not. -->
+
+After the improvement, no criterion is still missed. The original five and
+revised criterion 4 all passed 5/5. That isn't the same as nothing being
+broken. These are the problems I know about, what I'd do, and why I stopped.
+
+1. **Some fit cards describe me as the seller instead of the buyer.**
+   Examples: "Just dropped it on my depop shop if you want to steal the look"
+   (after, try 2) and "I just listed it on depop, but honestly debating
+   keeping it" (before, try 5). It happened in 2 of 5 cards before the change
+   and 2 of 5 after. *What I'd do:* add a line to the `create_fit_card` prompt
+   saying the person bought the item, then add a criterion that counts cards
+   using "listed", "dropped" or "my shop". *Why I stopped:* this unit allows
+   one improvement, and I spent it on the miss my criteria actually measured.
+   No criterion checks for this, so it can't count as a miss yet.
+
+2. **Criteria 3, 4 and 5 were only measured on one query.** They borrow
+   criterion 1's five tries (`vintage graphic tee under $30`, one $24 depop
+   item). *What I'd do:* add scenarios in `scenarios.py` with their own
+   `criterion` numbers: several price ceilings for 5, and several items and
+   platforms for 4. *Why I stopped:* adding scenarios between the before and
+   after runs would have changed the test along with the system, so the two
+   logs wouldn't be comparable.
+
+3. **The hashtag fix is only proven on one depop listing.** The diagnosis
+   showed the problem was specific to depop. Five tries on one item can't
+   tell me whether other depop items still get `#depop...` hashtags. *What
+   I'd do:* the multi-item scenarios from point 2 would cover this.
+
+4. **Two verdicts rest on weaker evidence than the criterion asks for.**
+   Criterion 3 says to compare `id`s, but the run log only prints titles, so
+   I compared titles. Criterion 5 says "returned item(s)", but the log only
+   shows the selected item's price, not all 10 results. *What I'd do:* have
+   `run_eval.py` print `selected_item["id"]`, `search_results[0]["id"]` and the
+   maximum price in `search_results`. *Why I stopped:* that changes the test
+   harness, and since both checks are deterministic, I'd expect the same
+   verdict.
+
+5. **Search returns loosely related items.** In the Sample Run,
+   `search_listings('Slim fit jeans', max_price=200)` returns three jeans
+   first, then tees, a blazer, a henley, a crewneck and a vest. Their
+   descriptions say "fits like a small" or "relaxed fit", and "fit" counts
+   as a keyword. The loop only uses `results[0]`, which is still jeans, so no
+   criterion caught it. *What I'd do:* add "fit" and "slim" to `_STOPWORDS`
+   in `tools.py`, or require more than one matching keyword. *Why I
+   stopped:* one change per unit, and it doesn't affect any criterion's
+   result.
 
 
 
