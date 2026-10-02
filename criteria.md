@@ -77,6 +77,19 @@ Suggestion string is 2-4 sentences 4 out of 5 times.
 
 **Why this target:** Sentence (count per stock docstring specs) is typical of a card-sized blurb. 80% hit rate will indicate the model is at least trying.
 
+> **Revised in unit 4:** For the matching query, the fit card names the
+> item's price and its platform exactly once each, in 4 of 5 tries. Counted
+> case-insensitively anywhere in the card, hashtags included, so
+> `#depopfinds` counts as a mention of depop.
+>
+> **Why revised:** The original measured the wrong thing. "Suggestion string"
+> doesn't say which output it means (outfit suggestion or fit card), and
+> 2-4 sentences is a rule the `create_fit_card` prompt already gives the model
+> word for word, so passing it only showed the instruction was followed. The
+> docstring and the prompt also ask for price and platform "once each",
+> and nothing checked that. The target stays at 4 of 5. I wrote this
+> revision after reading the before-run results.
+
 
 
 ---

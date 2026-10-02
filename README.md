@@ -215,6 +215,19 @@ Scored these faded black straight-leg jeans on thredUp for just $30, and they ha
 | 3. Matching item from selected to searched | 5 of 5 | P | P | P | P | P | PASS |
 | 4. Suggestion string length | 4 of 5 | P | P | P | P | P | PASS |
 | 5. Price in range | 5 of 5 | P | P | P | P | P | PASS |
+| 4r. _(revised)_ Fit card names price and platform once each | 4 of 5 | F | F | F | F | F | FAIL |
+
+Row 4r applies the criterion 4 revision in `criteria.md` to the same before-run output.
+Nothing was re-run. Every card names the price once, but every card also names
+depop twice, once in the text and once in a hashtag:
+
+| Try | Mentions of depop in the fit card |
+|---|---|
+| 1 | "on depop" + `#depopfinds` |
+| 2 | "on depop" + `#depopfinds` |
+| 3 | "my depop" + `#depopseller` |
+| 4 | "on depop" + `#depopfamous` |
+| 5 | "on depop" + `#depop` |
 
 **Real output from one try**, pasted as text, naming the file and function
 that produced it:
@@ -227,7 +240,7 @@ Criteria 3, 4 and 5 have no scenario of their own in this run. They were scored
 from the same five tries as criterion 1, so the output below is the evidence for
 all three.
 
-#### Criteria 1, 3, 4, 5 — `vintage graphic tee under $30`, example wardrobe, Try 1
+#### Criteria 1, 3, 4, 5: `vintage graphic tee under $30`, example wardrobe, Try 1
 
 - stopped early: no
 - selected_item: Graphic Tee — 2003 Tour Bootleg Style ($24.0, depop)
@@ -267,7 +280,7 @@ Trace (`trace.py`, called from `agent.py::run_agent`):
       out: Found this 2003 tour bootleg tee at the absolute best time. For just $24, it was an instant add to cart on dep…
 ```
 
-#### Criterion 2 — `designer ballgown size XXS under $5`, example wardrobe, Try 1
+#### Criterion 2: `designer ballgown size XXS under $5`, example wardrobe, Try 1
 
 - stopped early: yes
 - selected_item: (none)
@@ -318,13 +331,16 @@ Trace:
 |---|---|---|---|---|
 | 1 | Matching query completes all three tools | 4 of 5 | MET (5/5) | All 5 tries reached `create_fit_card` and returned a non-empty fit card; none stopped early. |
 | 2 | Impossible query stops before `suggest_outfit` | 5 of 5 | MET (5/5) | All 5 traces end at `[3] branch` with no `suggest_outfit` step, and the message names the description, size and price to change. |
-| 3 | `selected_item` is `search_results[0]` | 5 of 5 | MET (5/5) | In every try the `select_item` step shows the first title in the `search_listings` result. Compared by title, not `id`. The run log doesn't print ids. |
-| 4 | Suggestion is 2–4 sentences | 4 of 5 | MET (5/5) | Counted sentences by hand. Outfit suggestions: 2, 3, 2, 2, 2. Fit cards: 3, 2, 2, 3, 3. Both are in range, so the verdict holds whichever output the criterion means. |
+| 3 | `selected_item` is `search_results[0]` | 5 of 5 | MET (5/5) | In every try the `select_item` step shows the first title in the `search_listings` result. Compared by title, not `id`. The run log doesn't print `id`s. |
+| 4 | Suggestion is 2-4 sentences | 4 of 5 | MET (5/5) | Counted sentences by hand. Outfit suggestions: 2, 3, 2, 2, 2. Fit cards: 3, 2, 2, 3, 3. Both are in range, so the verdict holds whichever output the criterion means. |
 | 5 | Returned price ≤ query ceiling | 5 of 5 | MET (5/5) | The selected item was $24 in every try, under the $30 ceiling. Only the selected item's price is visible in the log, not all 10 results. |
+| 4r | _(revised)_ Fit card names price and platform once each | 4 of 5 | MISSED (0/5) | Counted case-insensitive occurrences of `$24` and `depop` in each card, hashtags included. Price appeared once in all 5. The platform appeared twice in all 5. |
 
 **Diagnoses**
 
-No criterion was missed. No miss to diagnose. Targets were easy to hit though.
+None of the five original criteria was missed. Targets were easy to hit though,
+and tightening the weakest one turned up a real miss (last bullet under
+criterion 4).
 
 - Criteria 3 and 5 are deterministic. One is `results[0]`, the other is a
   price filter. They can only fail if the code is broken, so 5/5 shows the code
@@ -333,12 +349,26 @@ No criterion was missed. No miss to diagnose. Targets were easy to hit though.
   model "2 to 4 sentences", so the check mostly confirms the model followed an
   instruction it was given. The criterion also says "suggestion string" while
   sitting under the fit card heading, so it isn't clear which output it counts.
-  I'd fix this one. E.g. "the fit card mentions the price
+  I'd fix this: "the fit card mentions the price
   and the platform exactly once each, in at least 4 of 5 tries", which the
   prompt asks for but nothing checks.
+
+  **I made that revision in `criteria.md` (row 4r above), and it missed 0 of 5.**
+  - **Where:** the model's output in `tools.py::create_fit_card`. The tool ran
+    and returned a caption every time, and the session passed it the right
+    item. The problem is in the prompt.
+  - **Mechanism:** the prompt says to mention the platform "exactly once" and
+    then adds "A couple of emoji or hashtags are fine". The model builds its
+    hashtags from the platform name (`#depopfinds`, `#depopseller`, `#depop`),
+    so the platform appears a second time in every card. The price never went
+    into a hashtag, which is why the price check passed 5/5.
+  - **Pattern:** the empty-wardrobe diagnostic run (Poshmark, $42) had no
+    repeats in any of its 5 cards. The model seems to treat "depop" as a
+    hashtag word but not "Poshmark". It happened on every depop try and on no
+    Poshmark try.
 - Every criterion except 2 was measured on one query and one item. 5/5 on
   `vintage graphic tee under $30` says nothing about other phrasings, sizes or
-  price ceilings. Criteria 3–5 need their own scenarios in `scenarios.py`.
+  price ceilings. Criteria 3 to 5 need their own scenarios in `scenarios.py`.
 
 
 
@@ -388,11 +418,20 @@ No criterion was missed. No miss to diagnose. Targets were easy to hit though.
 
 **Empty search**
 
-```
-Ask for something, or press Enter on an empty line to quit.
+From `run_eval.py` (`results/run_2026-10-02_1143_after.md`, impossible query,
+try 1). It has three steps where the happy path has five, because the branch
+stops the run before `suggest_outfit`.
 
-> 
-0 model calls this session
+```
+[1] parse_query
+      in:  designer ballgown size XXS under $5
+      out: description='designer ballgown', size='XXS', max_price=5.0
+[2] search_listings (via MCP)
+      in:  description='designer ballgown', size='XXS', max_price=5.0
+      out: [] (empty)
+      →    0 match(es)
+[3] branch
+      →    search returned []: stopping before suggest_outfit
 ```
 
 **On the MCP move:** <!-- what changed in your code, and whether anything  behaved differently afterwards. If the rewire didn't work, say exactly where it broke — the error text and the last thing that worked. That earns the point in full. --> Nothing changed, beyond the MCP move. Nothing behaved differently afterwards or broke (everything behaved as expected).
@@ -406,21 +445,71 @@ Ask for something, or press Enter on an empty line to quit.
 
      `python run_eval.py --label after` -->
 
-**What I changed:**
+**What I changed:** One prompt, in `tools.py::create_fit_card`. Nothing else
+changed between the before and after runs: same scenarios, same tries, cache
+off, temperature 0.9. The last rule in the prompt went from
 
-**Which failure it was meant to fix:**
+```
+A couple of emoji or hashtags are fine.
+```
+
+to
+
+```
+A couple of emoji or hashtags are fine, but no hashtag may contain the
+platform name or the price — #depopfinds would be a second mention.
+```
+
+The example hashtag is built from the item's own platform, so a Poshmark item
+gets `#poshmarkfinds` as its example.
+
+**Which failure it was meant to fix:** revised criterion 4 (row 4r), which
+missed 0/5. The diagnosis traced every miss to hashtags built from the
+platform name. The prompt both asked for "exactly once" and invited hashtags
+without saying that hashtags count as a mention. I picked this one because
+it's the only miss, and the cause is one sentence in one prompt.
 
 ### Run Log — After
 
+Produced by `run_eval.py::main`, written to `results/run_2026-10-02_1143_after.md`.
+
 | Criterion | Target | Try 1 | Try 2 | Try 3 | Try 4 | Try 5 | Verdict |
 |---|---|---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |  |  |
+| 1. matching query completes | 4 of 5 | P | P | P | P | P | PASS |
+| 2. impossible query stops early | 5 of 5 | P | P | P | P | P | PASS |
+| 3. Matching item from selected to searched | 5 of 5 | P | P | P | P | P | PASS |
+| 4. Suggestion string length | 4 of 5 | P | P | P | P | P | PASS |
+| 5. Price in range | 5 of 5 | P | P | P | P | P | PASS |
+| 4r. _(revised)_ Fit card names price and platform once each | 4 of 5 | P | P | P | P | P | PASS |
 
-**Did it help, and how do I know:**
+How each row was scored is the same as before:
+
+- **1:** all 5 completed with a fit card.
+- **2:** all 5 stopped at `[3] branch`.
+- **3:** `select_item` matched the first search title in all 5.
+- **4:** sentence counts for the outfit suggestions were 2, 3, 3, 3, 2, and for the fit cards 3, 2, 3, 2, 3.
+- **5:** $24 against a $30 ceiling.
+- **4r:** `$24` appeared once and `depop` once in every card.
+
+Real output, try 1 after the change (`tools.py::create_fit_card`):
+
+```
+Found this sick 2003 tour bootleg graphic tee and knew I had to grab it for just $24. It has the ultimate grungy, lived-in feel that goes with literally everything in my closet. Snagged it on depop and honestly haven't taken it off since. #grunge #thriftedstyle
+```
+
+The hashtags in the after-run are `#grunge #thriftedstyle`, `#vintage #streetwear`,
+`#vintagefashion #grungevibes`, `#vintagestyle #streetwear` and `#vintage #streetwear`.
+None contains the platform.
+
+**Did it help, and how do I know:** Yes. Revised criterion 4 went from 0/5 to
+5/5 on the same query. The model still writes hashtags, but none of them
+contain "depop" any more. The other five rows held at 5/5,
+so the change didn't break anything they measure. The empty-wardrobe
+diagnostic run (Poshmark) was 5/5 before and after.
+
+The evidence is limited to five tries on one item. The platform that
+caused the problem (depop) was only tested with one listing, and other depop
+items could still get a depop hashtag.
 
 <!-- If it made things worse, say that. Honestly reported, that earns full
      credit and is more interesting than one that worked. -->

@@ -106,7 +106,7 @@ def _search(parsed: dict) -> tuple[list[dict], str]:
         results = search_listings(
             parsed["description"], parsed["size"], parsed["max_price"]
         )
-        return results, f"search_listings (direct — MCP failed: {exc})"
+        return results, f"search_listings (direct, MCP failed: {exc})"
 
 
 def run_agent(query: str, wardrobe: dict) -> dict:

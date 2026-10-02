@@ -30,14 +30,14 @@ import re
 
 _STOPWORDS = {
     "a", "an", "and", "the", "for", "with", "under", "over", "in", "of",
-    # filler from how people phrase a request — "looking for a vintage tee"
+    # filler from how people phrase a request, e.g. "looking for a vintage tee"
     "looking", "want", "need", "something", "some", "find", "me", "i", "im",
 }
 
 
 def _stem(word: str) -> str:
     # Crude plural folding so "tees" finds "tee" and "boots" finds "boot".
-    # Applied to both sides, so "jeans" → "jean" still matches "jeans".
+    # Applied to both sides, so "jeans" becomes "jean" and still matches "jeans".
     return word[:-1] if len(word) > 3 and word.endswith("s") and not word.endswith("ss") else word
 
 
@@ -48,8 +48,8 @@ def _keywords(text: str) -> set[str]:
 
 def _size_tokens(size: str) -> set[str]:
     """
-    "S/M" → {"S", "M"}; "XL (oversized)" → {"XL"}; "W30 L30" → {"W30", "L30"};
-    "US 8.5" → {"US 8.5"}. Whole tokens only, so "S" never matches "US 9" and
+    "S/M" gives {"S", "M"}, "XL (oversized)" gives {"XL"}, "W30 L30" gives
+    {"W30", "L30"}, "US 8.5" gives {"US 8.5"}. Whole tokens only, so "S" never matches "US 9" and
     "L" never matches "XL".
     """
     cleaned = re.sub(r"\([^)]*\)", " ", size or "")
@@ -298,7 +298,9 @@ def create_fit_card(outfit: str, new_item: dict) -> str:
         f"Rules: 2 to 4 sentences. Mention the item, the price ({price}) and "
         f"the platform ({platform}) exactly once each. Sound like a real "
         f"person posting their outfit, not a product listing. Be specific "
-        f"about the vibe. A couple of emoji or hashtags are fine."
+        f"about the vibe. A couple of emoji or hashtags are fine, but no "
+        f"hashtag may contain the platform name or the price — "
+        f"#{platform.replace(' ', '')}finds would be a second mention."
     )
     response = generate(
         prompt,
