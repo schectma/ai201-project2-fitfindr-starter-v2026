@@ -42,7 +42,7 @@ Given a query that matches no listings, the agent stops before calling
 
 ---
 
-## 3. Something about state
+## 3. Matching item from selected to searched
 
 <!-- YOU WRITE THIS ONE.
 
@@ -60,7 +60,7 @@ Given a query that matches no listings, the agent stops before calling
 
 ---
 
-## 4. Something about the fit card
+## 4. Suggestion string length
 
 <!-- YOU WRITE THIS ONE.
 
@@ -81,7 +81,7 @@ Suggestion string is 2-4 sentences 4 out of 5 times.
 
 ---
 
-## 5. Your choice
+## 5. Price in range
 
 <!-- YOU WRITE THIS ONE TOO.
 

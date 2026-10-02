@@ -210,17 +210,58 @@ Scored these faded black straight-leg jeans on thredUp for just $30, and they ha
 
 | Criterion | Target | Try 1 | Try 2 | Try 3 | Try 4 | Try 5 | Verdict |
 |---|---|---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |  |  |
+| 1. matching query completes | 4 of 5 | P | P | P | P | P | PASS |
+| 2. impossible query stops early | 5 of 5 | P | P | P | P | P | PASS |
+| 3. Matching item from selected to searched | 5 of 5 | P | P | P | P | P | PASS |
+| 4. Suggestion string length | 4 of 5 | P | P | P | P | P | PASS |
+| 5. Price in range | 5 of 5 | P | P | P | P | P | PASS |
 
 **Real output from one try**, pasted as text, naming the file and function
 that produced it:
 
 ```
+- Query: `vintage graphic tee under $30`
+- Wardrobe: example
 
+**Try 1**
+
+- stopped early: no
+- selected_item: Graphic Tee — 2003 Tour Bootleg Style ($24.0, depop)
+- search_results: 10
+
+Outfit suggestion:
+
+```
+* Pair the graphic tee with your baggy dark-wash jeans, black combat boots, and the slightly cropped vintage black denim jacket for an effortless grunge look.
+* Tuck the tee into your wide-leg khaki trousers, add your brown leather belt and chunky white sneakers, and layer the black cropped zip hoodie on top for a streetwear vibe.
+```
+
+Fit card:
+
+```
+Found this 2003 tour bootleg tee at the absolute best time. For just $24, it was an instant add to cart on depop. Total effortless grunge energy for today's fit. 🎸🖤 #depopfinds #grungestyle
+```
+
+Trace:
+
+```
+[1] parse_query
+      in:  vintage graphic tee under $30
+      out: description='vintage graphic tee', size=None, max_price=30.0
+[2] search_listings (via MCP)
+      in:  description='vintage graphic tee', size=None, max_price=30.0
+      out: 10 items: Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey, Y2K Baby Tee — Butterfly Print … +7 more
+      →    10 match(es)
+[3] select_item
+      out: Graphic Tee — 2003 Tour Bootleg Style ($24.0, depop)
+[4] suggest_outfit
+      in:  Graphic Tee — 2003 Tour Bootleg Style ($24.0, depop)
+      out: * Pair the graphic tee with your baggy dark-wash jeans, black combat boots, and the slightly cropped vintage b…
+      →    10 wardrobe item(s)
+[5] create_fit_card
+      in:  Graphic Tee — 2003 Tour Bootleg Style ($24.0, depop)
+      out: Found this 2003 tour bootleg tee at the absolute best time. For just $24, it was an instant add to cart on dep…
+```
 ```
 
 ---
