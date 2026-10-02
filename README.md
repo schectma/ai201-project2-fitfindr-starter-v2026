@@ -272,21 +272,43 @@ that produced it:
 **Happy path**
 
 ```
+[1] parse_query
+      in:  pants under $100
+      out: description='pants', size=None, max_price=100.0
+[2] search_listings (via MCP)
+      in:  description='pants', size=None, max_price=100.0
+      out: 2 items: Corduroy Wide-Leg Pants — Rust, Low-Rise Cargo Pants — Khaki
+      →    2 match(es)
+[3] select_item
+      out: Corduroy Wide-Leg Pants — Rust ($32.0, depop)
+[4] suggest_outfit
+      in:  Corduroy Wide-Leg Pants — Rust ($32.0, depop)
+      out: * Pair the rust cords with the white ribbed tank top, layered under the vintage black denim jacket, and finish…
+      →    10 wardrobe item(s)
+[5] create_fit_card
+      in:  Corduroy Wide-Leg Pants — Rust ($32.0, depop)
+      out: Obsessed with these vintage rust corduroy wide-leg pants I just scored on depop for only $32! They give off th…
 
+  Found:    Corduroy Wide-Leg Pants — Rust — $32.0 on depop
+
+  Outfit:   * Pair the rust cords with the white ribbed tank top, layered under the vintage black denim jacket, and finish with chunky white sneakers.
+* Style the high-waisted pants with the oversized grey crewneck tucked in slightly at the front, worn with the brown leather belt and black combat boots.
+
+  Fit card: Obsessed with these vintage rust corduroy wide-leg pants I just scored on depop for only $32! They give off the ultimate 70s earth-tone vibe whether I'm styling them cozy or casual. ✨🍂
+
+0 model calls this session, 2 served from cache
 ```
 
 **Empty search**
 
 ```
+Ask for something, or press Enter on an empty line to quit.
 
+> 
+0 model calls this session
 ```
 
-**On the MCP move:** <!-- what changed in your code, and whether anything
-behaved differently afterwards. If the rewire didn't work, say exactly where it
-broke — the error text and the last thing that worked. That earns the point in
-full. -->
-
-
+**On the MCP move:** <!-- what changed in your code, and whether anything  behaved differently afterwards. If the rewire didn't work, say exactly where it broke — the error text and the last thing that worked. That earns the point in full. --> Nothing changed, beyond the MCP move. Nothing behaved differently afterwards or broke (everything behaved as expected).
 
 ---
 

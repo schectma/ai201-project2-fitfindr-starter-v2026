@@ -79,7 +79,7 @@ def parse_query(query: str) -> dict:
 
 # ── planning loop ─────────────────────────────────────────────────────────────
 
-def _search(parsed: dict) -> list[dict]:
+def _search(parsed: dict) -> tuple[list[dict], str]:
     """
     Call search_listings — over MCP when the server has it registered.
 
@@ -100,11 +100,13 @@ def _search(parsed: dict) -> list[dict]:
                 "max_price": parsed["max_price"],
             },
         )
-        return results or []
-    except Exception:  # noqa: BLE001 — MCP unavailable is not a user-facing error
-        return search_listings(
+        return results or [], "search_listings (via MCP)"
+    except Exception as exc:  # noqa: BLE001 — MCP unavailable is not a user-facing error
+        # Say so in the trace, so a broken server can't hide behind the fallback.
+        results = search_listings(
             parsed["description"], parsed["size"], parsed["max_price"]
         )
+        return results, f"search_listings (direct — MCP failed: {exc})"
 
 
 def run_agent(query: str, wardrobe: dict) -> dict:
@@ -130,6 +132,7 @@ def run_agent(query: str, wardrobe: dict) -> dict:
     """
     session = new_session(query, wardrobe)
     steps = 0
+    trace.start_trace()
 
     # ⚠️ UNIT 4, MILESTONE 2 — everything in the try/except is unit 3 code; the
     # handler around it is what unit 4 adds, so that a bad key produces a
@@ -139,15 +142,17 @@ def run_agent(query: str, wardrobe: dict) -> dict:
         trace.check_iterations(steps)
         parsed = parse_query(query)
         session["parsed"] = parsed
-        trace.step("parse_query", inputs=query, returned=parsed)
+        # trace._short() collapses a dict to its keys, so spell the values out.
+        parsed_text = ", ".join(f"{k}={v!r}" for k, v in parsed.items())
+        trace.step("parse_query", inputs=query, returned=parsed_text)
 
         steps += 1
         trace.check_iterations(steps)
-        results = _search(parsed)
+        results, search_label = _search(parsed)
         session["search_results"] = results
         trace.step(
-            "search_listings (via MCP)",
-            inputs=parsed,
+            search_label,
+            inputs=parsed_text,
             returned=results,
             note=f"{len(results)} match(es)",
         )
